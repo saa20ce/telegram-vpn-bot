@@ -32,6 +32,7 @@ class Persons(Base):
     server_table = relationship("Servers", back_populates="users")
     payment = relationship('Payments', back_populates='payment_id')
     recurring_payment_status = Column(Boolean, default=False, nullable=False)
+    next_payment_date = Column(DateTime, nullable=True)
     promocode = relationship(
         'PromoCode',
         secondary='person_promocode_association',
