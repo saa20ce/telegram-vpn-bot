@@ -12,7 +12,6 @@ from bot.database.methods.get import (
     get_person,
     get_last_payment,
     get_payment_method_id,
-    get_all_recurring_users_by_payment_date_now
 )
 from bot.database.methods.update import (
     person_banned_true,
@@ -20,7 +19,6 @@ from bot.database.methods.update import (
     server_space_update,
     add_time_person,
     reduce_balance_person,
-    update_next_payment_date
 )
 from bot.misc.VPN.ServerManager import ServerManager
 from bot.misc.language import Localization, get_lang
@@ -60,6 +58,19 @@ async def loop(bot: Bot):
 async def check_date(person, bot: Bot):
     try:
         if person.subscription <= int(time.time()):
+            if person.recurring_payment_status == True:
+                log.debug(f"Recurring person: {len(person.username)}")
+                log.info(f"Processing recurrent payment for user {person.id}")
+                payment_method_id = await get_payment_method_id(person.id)
+
+                from bot.services.payment_service import PaymentService
+                payment_service = PaymentService(CONFIG, person.tgid, payment_method_id, CONFIG.recurring_payment_amount)
+                payment = await payment_service.create_recurring_payment()
+                if payment.status == 'succeeded':
+                    log.error(f"Successfully paid recurring payment for person ID: {person.id}")
+                else:
+                    log.error(f"Failed to create recurring payment for person ID: {person.id}")
+
             if await check_auto_renewal(
                     person,
                     bot,
@@ -144,25 +155,3 @@ async def check_auto_renewal(person, bot, text):
         )
     return False
 
-
-async def check_recurring_payments(bot: Bot):
-    log.debug("Starting to check recurring payments.")
-    try:
-        all_persons = await get_all_recurring_users_by_payment_date_now()
-        log.debug(f"All recurring persons: {len(all_persons)}")
-
-        for person in all_persons:
-            log.info(f"Processing recurrent payment for user {person.id}")
-            payment_method_id = await get_payment_method_id(person.id)
-
-            from bot.services.payment_service import PaymentService
-            payment_service = PaymentService(CONFIG, person.tgid, payment_method_id, CONFIG.recurring_payment_amount)
-            payment = await payment_service.create_recurring_payment()
-            if payment.status == 'succeeded':
-                await update_next_payment_date(person.id, CONFIG.recurring_payment_interval_minutes)
-            else:
-                log.error(f"Failed to create recurring payment for person ID: {person.id}")
-
-    except Exception as e:
-        log.error(f"Error in scheduled recurring payment check: {e}")
-        raise 
