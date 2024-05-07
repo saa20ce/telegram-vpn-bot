@@ -150,7 +150,7 @@ class KassaSmart(PaymentSystem):
             },
             "payment_method_id": payment_method_id,
             "capture": True,
-            "description": "Рекуррентный платеж за использование сервиса"
+            "description": f"Рекуррентный платеж за использование сервиса User TG ID={self.user_id}"
         })
 
         for _ in range(10):  # Повторяем проверку 10 раз с интервалом в 30 секунд
@@ -167,6 +167,7 @@ class KassaSmart(PaymentSystem):
                 await asyncio.sleep(30)  # Ждём 30 секунд перед следующей проверкой
             else:
                 log.error(f"Failed to create recurring payment for User ID: {self.user_id}, Payment Status: {payment.status}")
+                await update_person_recurring_status(self.user_id, False)
                 break
 
         return payment
