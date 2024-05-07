@@ -227,11 +227,3 @@ async def get_last_payment(user_id):
         return last_payment
 
 
-async def get_all_recurring_users_by_payment_date_now():
-    async with AsyncSession(autoflush=False, bind=engine()) as db:
-        current_time = datetime.now()
-        statement = select(Persons).where(Persons.recurring_payment_status == True).where(Persons.next_payment_date <= current_time)
-        result = await db.execute(statement)
-        users = result.scalars().all()
-        return users
-

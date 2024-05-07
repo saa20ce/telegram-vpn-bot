@@ -200,15 +200,3 @@ async def update_person_recurring_status(tgid, status):
         )
         await db.commit()
 
-
-async def update_next_payment_date(user_id, minutes):
-    async with AsyncSession(autoflush=False, bind=engine()) as db:
-        #next_payment_date = datetime.now() + timedelta(days=30 * months)
-        next_payment_date = datetime.now() + timedelta(seconds=60 * minutes)
-        person = await _get_person(db, tgid)
-        if person is not None:
-            person.next_payment_date = next_payment_date
-            if person.next_payment_date < 0:
-                return False
-            await db.commit()
-            return True
