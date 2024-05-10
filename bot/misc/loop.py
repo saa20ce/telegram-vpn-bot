@@ -67,14 +67,24 @@ async def check_date(person, bot: Bot):
                 payment_service = PaymentService(CONFIG, person.tgid, payment_method_id, CONFIG.recurring_payment_amount)
                 payment = await payment_service.create_recurring_payment()
                 if payment.status == 'succeeded':
-                    log.error(f"Successfully paid recurring payment for person ID: {person.id}")
+                    await bot.send_message(
+                        person.tgid,
+                        _('loop_autopay', person.lang).format(
+                            text=_('payment_autopay_text', person.lang),
+                            mount_count=1
+                        ),
+                        reply_markup=await user_menu(
+                            person,
+                            person.lang
+                        )
+                    )
+                    log.info(f"Successfully paid recurring payment for person ID: {person.id}")
                 else:
                     log.error(f"Failed to create recurring payment for person ID: {person.id}")
 
             if await check_auto_renewal(
                     person,
-                    bot,
-                    _('loop_autopay_text', person.lang)
+                    bot
             ):
                 return
             if person.server is not None:
@@ -114,7 +124,7 @@ async def delete_key(person):
         raise "Failed to update data about free space on the server"
 
 
-async def check_auto_renewal(person, bot, text):
+async def check_auto_renewal(person, bot):
     try:
         for price, mount_count in month_count.items():
             if person.balance >= price:
@@ -125,18 +135,6 @@ async def check_auto_renewal(person, bot, text):
                     await reduce_balance_person(
                         price,
                         person.tgid
-                    )
-                    person_new = await get_person(person.tgid)
-                    await bot.send_message(
-                        person_new.tgid,
-                        _('loop_autopay', person_new.lang).format(
-                            text=text,
-                            mount_count=mount_count
-                        ),
-                        reply_markup=await user_menu(
-                            person_new,
-                            person_new.lang
-                        )
                     )
                     return True
                 else:
