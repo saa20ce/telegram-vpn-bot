@@ -1,6 +1,7 @@
 import logging
 
 from aiogram import Router, F
+from aiogram import types
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery
@@ -38,6 +39,13 @@ from bot.misc.language import Localization, get_lang
 from bot.misc.callbackData import ChooseServer, ChoosingLang
 
 log = logging.getLogger(__name__)
+
+
+log.setLevel(logging.DEBUG)
+handler = logging.FileHandler("main.user.handler.py.log", encoding='utf-8')
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+log.addHandler(handler)
 
 _ = Localization.text
 btn_text = Localization.get_reply_button
@@ -224,7 +232,7 @@ async def info_subscription(m: Message, state: FSMContext) -> None:
     has_used_trial = person.trial_used if hasattr(person, 'trial_used') else False
     await m.answer(
         _('inform_subscription', lang),
-        reply_markup=await subscription_menu(lang)
+        reply_markup=await subscription_menu(lang, has_used_trial)
     )
 
 
@@ -277,12 +285,17 @@ async def info_message_handler(m: Message, state: FSMContext) -> None:
 
 @user_router.message(F.text.in_(btn_text('trial_period_btn')))
 async def handle_trial_payment(m: Message, state: FSMContext) -> None:
+    log.debug("Handling trial payment button press")
     lang = await get_lang(m.from_user.id, state)
     person = await get_person(m.from_user.id)
     if not person.trial_used:
-        # Здесь должна быть логика оплаты
-        # Если оплата успешна:
+        log.debug("Trial period is not used yet")
+        await m.answer(
+            _('method_replenishment', lang),
+            reply_markup=await replenishment(CONFIG, lang, True)
+        )
         await update_person_trial_status(m.from_user.id, True)
         await m.answer(_('trial_period_activated', lang))
     else:
+        log.debug("Trial period has already been used")
         await m.answer(_('trial_period_already_used', lang))
