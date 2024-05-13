@@ -8,6 +8,7 @@ class ChoosingMonths(CallbackData, prefix='month'):
 
 class ChoosingPyment(CallbackData, prefix='payment'):
     payment: str
+    is_trial: bool = False
 
 
 class CheckPayment(CallbackData, prefix='c'):
