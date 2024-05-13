@@ -719,7 +719,7 @@ msgstr "Paid out ✅"
 msgid "payments_wallet_pay_btn"
 msgstr "👛Wallet"
 
-msgid "payments_yookassa_btn"
+msgid "payments_kassasmart_btn"
 msgstr "🇷🇺Yookassa"
 
 msgid "payments_yoomoney_btn"

@@ -721,7 +721,7 @@ msgstr "Выплачено ✅"
 msgid "payments_wallet_pay_btn"
 msgstr "👛Кошелёк"
 
-msgid "payments_yookassa_btn"
+msgid "payments_kassasmart_btn"
 msgstr "🇷🇺Юкасса"
 
 msgid "payments_yoomoney_btn"
@@ -841,7 +841,7 @@ msgid "admin_users_cancellation"
 msgstr "Отмена ❌"
 
 msgid "trial_period_btn"
-msgstr "Пробный период "
+msgstr "Пробный период"
 
 msgid "trial_period_activated"
 msgstr "Пробный период успешно активирован"
