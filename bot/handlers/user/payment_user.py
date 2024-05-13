@@ -33,6 +33,12 @@ from bot.database.methods.get import (
 
 log = logging.getLogger(__name__)
 
+log.setLevel(logging.DEBUG)
+handler = logging.FileHandler("payment_user.log", encoding='utf-8')
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+log.addHandler(handler)
+
 _ = Localization.text
 btn_text = Localization.get_reply_button
 
@@ -94,12 +100,26 @@ async def callback_price(
         callback_data: ChoosingPyment,
         state: FSMContext
 ):
+
+    is_trial = callback_data.is_trial
     lang = await get_lang(call.from_user.id, state)
-    await call.message.edit_text(
-        _('choosing_amount_menu', lang),
-        call.inline_message_id,
-        reply_markup=await price_menu(CONFIG, callback_data.payment))
+    await state.update_data(price=(CONFIG.trial_price if is_trial else None), is_trial=is_trial)
+
+    if is_trial:
+        await call.message.answer(
+            _('input_email_check', lang),
+            reply_markup=await back_menu_balance(lang)
+        )
+        await state.set_state(Email.input_email)
+
+    else:
+        await call.message.edit_text(
+            _('choosing_amount_menu', lang),
+            call.inline_message_id,
+            reply_markup=await price_menu(CONFIG, callback_data.payment)
+        )
     await call.answer()
+    log.debug(f"Callback price: is_trial={is_trial}")
 
 
 @callback_user.callback_query(ChoosingPrise.filter(F.payment == 'KassaSmart'))
@@ -120,30 +140,54 @@ async def callback_payment(
 
 @callback_user.message(Email.input_email)
 async def input_email(message: Message, state: FSMContext):
+    log.debug(f"Handling email input: {message.text}")
     lang = await get_lang(message.from_user.id, state)
     email = message.text.strip()
     data = await state.get_data()
     price = data['price']
+    is_trial = data['is_trial']
+    log.debug(f"Handling email input: {email}, is_trial={is_trial}")
     email_pattern = re.compile(
         r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
     )
     if email_pattern.match(email):
-        person = await get_person(message.from_user.id)
-        await message.answer(
-            _('think_email_check', lang),
-            reply_markup=await balance_menu(person, lang)
-        )
-        await pay_payment(
-            'KassaSmart',
-            message,
-            message.from_user,
-            price,
-            email
-        )
+        if is_trial:
+            await process_trial_payment(message, email, CONFIG.trial_price, lang)
+        else:
+            await process_regular_payment(message, email, price, lang)
         await state.clear()
     else:
         await message.answer(_('error_email_input', lang))
 
+async def process_regular_payment(message, email, price, lang):
+    log.debug("Processing regular payment...")
+    person = await get_person(message.from_user.id)
+    await message.answer(
+        _('think_email_check', lang),
+        reply_markup=await balance_menu(person, lang)
+    )
+    await pay_payment(
+        'KassaSmart',
+        message,
+        message.from_user,
+        price,
+        email
+    )
+
+async def process_trial_payment(message, email, price, lang):
+    log.debug("Processing trial payment...")
+    person = await get_person(message.from_user.id)
+    await message.answer(
+        _('think_email_check', lang),
+        reply_markup=await balance_menu(person, lang)
+    )
+    await pay_payment(
+        'KassaSmart',
+        message,
+        message.from_user,
+        price,
+        email
+    )
 
 @callback_user.callback_query(ChoosingPrise.filter())
 async def callback_payment(call: CallbackQuery, callback_data: ChoosingPrise):
@@ -160,6 +204,7 @@ async def callback_payment(call: CallbackQuery, callback_data: ChoosingPrise):
 
 
 async def pay_payment(payment, message, from_user, price, data):
+    log.debug(f"Starting payment process: {payment} for user {from_user.id} with price {price} and email {data}")
     payment = types_of_payments[payment](
         CONFIG,
         message,
