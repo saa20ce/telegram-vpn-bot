@@ -57,31 +57,7 @@ async def loop(bot: Bot):
 
 async def check_date(person, bot: Bot):
     try:
-        if person.subscription <= int(time.time()):
-            if person.recurring_payment_status == True:
-                log.debug(f"Recurring person: {len(person.username)}")
-                log.info(f"Processing recurrent payment for user {person.id}")
-                payment_method_id = await get_payment_method_id(person.id)
-
-                from bot.services.payment_service import PaymentService
-                payment_service = PaymentService(CONFIG, person.tgid, payment_method_id, CONFIG.recurring_payment_amount)
-                payment = await payment_service.create_recurring_payment()
-                if payment.status == 'succeeded':
-                    await bot.send_message(
-                        person.tgid,
-                        _('loop_autopay', person.lang).format(
-                            text=_('payment_autopay_text', person.lang),
-                            mount_count=1
-                        ),
-                        reply_markup=await user_menu(
-                            person,
-                            person.lang
-                        )
-                    )
-                    log.info(f"Successfully paid recurring payment for person ID: {person.id}")
-                else:
-                    log.error(f"Failed to create recurring payment for person ID: {person.id}")
-
+        if person.subscription <= int(time.time()):            
             if await check_auto_renewal(
                     person,
                     bot
@@ -126,6 +102,29 @@ async def delete_key(person):
 
 async def check_auto_renewal(person, bot):
     try:
+        if person.recurring_payment_status == True:
+            log.debug(f"Recurring person: {len(person.username)}")
+            log.info(f"Processing recurrent payment for user {person.id}")
+            payment_method_id = await get_payment_method_id(person.id)
+
+            from bot.services.payment_service import PaymentService
+            payment_service = PaymentService(CONFIG, person.tgid, payment_method_id, CONFIG.recurring_payment_amount)
+            payment = await payment_service.create_recurring_payment()
+            if payment.status == 'succeeded':
+                await bot.send_message(
+                    person.tgid,
+                    _('loop_autopay', person.lang).format(
+                        text=_('payment_autopay_text', person.lang),
+                        mount_count=1
+                    ),
+                    reply_markup=await user_menu(
+                        person,
+                        person.lang
+                    )
+                )
+                log.info(f"Successfully paid recurring payment for person ID: {person.id}")
+            else:
+                log.error(f"Failed to create recurring payment for person ID: {person.id}")
         for price, mount_count in month_count.items():
             if person.balance >= price:
                 if await add_time_person(
