@@ -42,7 +42,7 @@ async def user_menu(person, lang) -> ReplyKeyboardMarkup:
     return kb.as_markup(resize_keyboard=True)
 
 
-async def subscription_menu(lang, has_used_trial=False) -> ReplyKeyboardMarkup:
+async def subscription_menu(lang, has_used_trial) -> ReplyKeyboardMarkup:
     kb = ReplyKeyboardBuilder()
     kb.row(
         keyBtn(text=_('balanced_btn', lang)),
