@@ -14,32 +14,54 @@ from bot.misc.util import CONFIG
 _ = Localization.text
 
 
-async def replenishment(config, lang) -> InlineKeyboardMarkup:
+# async def replenishment(config, lang) -> InlineKeyboardMarkup:
+#     kb = InlineKeyboardBuilder()
+#     if config.tg_wallet_token != "":
+#         kb.button(
+#             text=_('payments_wallet_pay_btn', lang),
+#             callback_data=ChoosingPyment(payment='WalletPay'))
+#     if config.yookassa_shop_id != "" and config.yookassa_secret_key != "":
+#         kb.button(
+#             text=_('payments_yookassa_btn', lang),
+#             callback_data=ChoosingPyment(payment='KassaSmart'))
+#     if config.yoomoney_token != "" and config.yoomoney_wallet_token != "":
+#         kb.button(
+#             text=_('payments_yoomoney_btn', lang),
+#             callback_data=ChoosingPyment(payment='YooMoney'))
+#     if config.lava_token_secret != "" and config.lava_id_project != "":
+#         kb.button(
+#             text=_('payments_lava_btn', lang),
+#             callback_data=ChoosingPyment(payment='Lava'))
+#     if (
+#             config.yookassa_shop_id == ""
+#             and config.tg_wallet_token == ""
+#             and config.yoomoney_token == ""
+#             and config.lava_token_secret == ""
+#     ):
+#         kb.button(text=_('payments_not_btn_1', lang), callback_data='none')
+#         kb.button(text=_('payments_not_btn_2', lang), callback_data='none')
+#     kb.adjust(1)
+#     return kb.as_markup()
+
+async def replenishment(config, lang, is_trial=False) -> InlineKeyboardMarkup:
     kb = InlineKeyboardBuilder()
-    if config.tg_wallet_token != "":
-        kb.button(
-            text=_('payments_wallet_pay_btn', lang),
-            callback_data=ChoosingPyment(payment='WalletPay'))
-    if config.yookassa_shop_id != "" and config.yookassa_secret_key != "":
-        kb.button(
-            text=_('payments_yookassa_btn', lang),
-            callback_data=ChoosingPyment(payment='KassaSmart'))
-    if config.yoomoney_token != "" and config.yoomoney_wallet_token != "":
-        kb.button(
-            text=_('payments_yoomoney_btn', lang),
-            callback_data=ChoosingPyment(payment='YooMoney'))
-    if config.lava_token_secret != "" and config.lava_id_project != "":
-        kb.button(
-            text=_('payments_lava_btn', lang),
-            callback_data=ChoosingPyment(payment='Lava'))
-    if (
-            config.yookassa_shop_id == ""
-            and config.tg_wallet_token == ""
-            and config.yoomoney_token == ""
-            and config.lava_token_secret == ""
-    ):
+    payment_methods = {
+        'WalletPay': config.tg_wallet_token,
+        'KassaSmart': (config.yookassa_shop_id and config.yookassa_secret_key),
+        'YooMoney': (config.yoomoney_token and config.yoomoney_wallet_token),
+        'Lava': (config.lava_token_secret and config.lava_id_project)
+    }
+
+    for method, available in payment_methods.items():
+        if available:
+            callback_data = ChoosingPyment(payment=method, is_trial=is_trial)
+            text = _('payments_' + method.lower() + '_btn', lang)
+            kb.button(text=text, callback_data=callback_data)
+
+    if all(not v for v in payment_methods.values()):
         kb.button(text=_('payments_not_btn_1', lang), callback_data='none')
         kb.button(text=_('payments_not_btn_2', lang), callback_data='none')
+    
     kb.adjust(1)
     return kb.as_markup()
 
