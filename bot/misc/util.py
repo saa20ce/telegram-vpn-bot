@@ -23,6 +23,8 @@ class Config:
     recurring_payment_amount: int
     recurring_payment_interval_days: int
     recurring_payment_interval_minutes: int
+    trial_price: int
+    trial_duration_days: int
     referral_day: int
     referral_percent: int
     minimum_withdrawal_amount: int

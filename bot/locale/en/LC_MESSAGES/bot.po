@@ -591,6 +591,9 @@ msgstr "Error auto-renewing or auto-purchasing subscription for client with ID {
 msgid "payment_success"
 msgstr "<b>Payment successful!</b>\nYour balance has been topped up by: <u><b>{total_amount}₽</b></u>"
 
+msgid "trial_payment_success"
+msgstr "<b>Trial payment successful!</b>"
+
 msgid "reff_add_balance"
 msgstr "The user you referred has topped up their balance!\n You receive -> <b>{referral_balance} ₽</b> added to your referral balance 🎉🎉"
 

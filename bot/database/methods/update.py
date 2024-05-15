@@ -200,3 +200,11 @@ async def update_person_recurring_status(tgid, status):
         )
         await db.commit()
 
+async def update_person_trial_status(tgid, status):
+    async with AsyncSession(autoflush=False, bind=engine()) as db:
+        await db.execute(
+            update(Persons)
+            .where(Persons.tgid == tgid)
+            .values(trial_used=status)
+        )
+        await db.commit()

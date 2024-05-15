@@ -4,7 +4,9 @@ from bot.database.methods.get import get_person
 from bot.database.methods.insert import add_payment
 from bot.database.methods.update import (
     add_balance_person,
-    add_referral_balance_person
+    add_referral_balance_person,
+    add_time_person,
+    update_person_trial_status
 )
 
 from bot.keyboards.reply.user_reply import balance_menu
@@ -30,7 +32,7 @@ class PaymentSystem:
     async def to_pay(self):
         raise NotImplementedError()
 
-    async def successful_payment(self, total_amount, name_payment, payment_method_id=None):
+    async def successful_payment(self, total_amount, name_payment, payment_method_id=None, is_trial=False):
         log.info(
             f'user ID: {self.user_id}'
             f' success payment {total_amount} RUB'
@@ -41,22 +43,34 @@ class PaymentSystem:
             await self.message.answer(_('error_person_not_found', lang_user))
             return
         log.debug(f"Adding balance: User ID={person.id}, Old Balance={person.balance}, Deposit={total_amount}")
-        if not await add_balance_person(
-                self.user_id,
-                total_amount
-        ):
-            await self.message.answer(_('error_send_admin', lang_user))
-            return
+        if is_trial:
+            trial_duration_seconds = CONFIG.trial_duration_days * CONFIG.COUNT_SECOND_DAY
+            await update_person_trial_status(self.user_id, True)
+            await self.message.answer(
+                _('trial_payment_success', lang_user),
+                reply_markup=await balance_menu(person, lang_user)
+            )
+            if not await add_time_person(self.user_id, trial_duration_seconds):
+                await self.message.answer(_('error_send_admin', lang_user))
+                return
+        else:
+            if not await add_balance_person(
+                    self.user_id,
+                    total_amount
+            ):
+                await self.message.answer(_('error_send_admin', lang_user))
+                return
+
+            await self.message.answer(
+                _('payment_success', lang_user).format(total_amount=total_amount),
+                reply_markup=await balance_menu(person, lang_user)
+            )
         
         await add_payment(
             self.user_id,
             total_amount,
             name_payment,
             payment_method_id
-        )
-        await self.message.answer(
-            _('payment_success', lang_user).format(total_amount=total_amount),
-            reply_markup=await balance_menu(person, lang_user)
         )
 
         if CONFIG.auto_extension:

@@ -35,8 +35,7 @@ async def start_bot():
     jobs = scheduler.get_jobs()
     for job in jobs:
         log.debug(f"Job: {job.name} | Next Run: {job.next_run_time} | Interval: {job.trigger}")
-    scheduler.add_job(loop, "interval", seconds=60, args=(bot,))
-    log.info(f"Added recurring payments check job with interval {CONFIG.recurring_payment_interval_minutes} minutes")
+    scheduler.add_job(loop, "interval", seconds=15, args=(bot,))
     scheduler.start()
     await dp.start_polling(bot)
 

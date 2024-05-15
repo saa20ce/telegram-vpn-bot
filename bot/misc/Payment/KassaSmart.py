@@ -12,13 +12,6 @@ from bot.database.methods.update import (
     update_person_recurring_status
 )
 
-import logging
-log = logging.getLogger(__name__)
-log.setLevel(logging.DEBUG)
-handler = logging.FileHandler("KassaSmart.log", encoding='utf-8')
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-handler.setFormatter(formatter)
-log.addHandler(handler)
 
 _ = Localization.text
 
@@ -45,8 +38,7 @@ class KassaSmart(PaymentSystem):
         self.ID = str(uuid.uuid4())
 
     async def successful_payment(self, total_amount, name_payment, payment_method_id=None):
-        # Вызов оригинального метода successful_payment из базового класса
-        await super().successful_payment(total_amount, name_payment, payment_method_id)
+        await super().successful_payment(total_amount, name_payment, payment_method_id, is_trial=self.is_trial)
         await update_person_recurring_status(self.user_id, True)
         person = await get_person(self.user_id)
         if not person:
@@ -55,7 +47,6 @@ class KassaSmart(PaymentSystem):
         log.debug(f"Person recurring_payment_status User ID={person.recurring_payment_status}")
 
     async def check_payment(self, time):
-        #log.debug("Checking payment")
         Configuration.account_id = self.ACCOUNT_ID
         Configuration.secret_key = self.SECRET_KEY
         tic = 0
@@ -63,7 +54,6 @@ class KassaSmart(PaymentSystem):
         while tic < time and not is_payment_processed:
             try:
                 res = Payment.list().items
-                #log.debug(f"Received payment items: {res}")
                 for item in res:
                     if item.status == 'succeeded' and item.id == self.ID:
                         await self.successful_payment(
@@ -72,7 +62,6 @@ class KassaSmart(PaymentSystem):
                             item.payment_method.id
                         )
                         is_payment_processed = True
-                        #log.info(f'Successfull ayment_method.id: {item.payment_method.id}')
                         return
             except Exception as e:
                 log.error(f"Error checking payment: {e} , Payment ID: {self.ID}")
@@ -81,7 +70,6 @@ class KassaSmart(PaymentSystem):
                 break
             tic += self.STEP
             await asyncio.sleep(self.STEP)
-        #log.info("Exiting payment check loop.")
         return
 
     async def invoice(self, lang_user):
@@ -129,10 +117,6 @@ class KassaSmart(PaymentSystem):
             _('payment_balance_text', lang_user).format(price=self.price),
             reply_markup=await pay_and_check(link_invoice, lang_user)
         )
-        # log.info(
-        #     f'Create payment link YooKassaSmart '
-        #     f'User: (ID: {self.user_id}'
-        # )
         try:
             await self.check_payment(self.TEN_MINUTE)
         except Exception as e:
@@ -153,7 +137,7 @@ class KassaSmart(PaymentSystem):
             "description": f"Рекуррентный платеж за использование сервиса User TG ID={self.user_id}"
         })
 
-        for _ in range(10):  # Повторяем проверку 10 раз с интервалом в 30 секунд
+        for _ in range(10): 
             payment = Payment.find_one(payment.id)
             person = await get_person(self.user_id)
             if not person:
@@ -164,7 +148,7 @@ class KassaSmart(PaymentSystem):
                 log.info(f"Recurring payment successful for User ID: {self.user_id}, Amount: {self.recurring_payment_amount}")
                 break
             elif payment.status in ['pending', 'waiting_for_capture']:
-                await asyncio.sleep(30)  # Ждём 30 секунд перед следующей проверкой
+                await asyncio.sleep(30)
             else:
                 log.error(f"Failed to create recurring payment for User ID: {self.user_id}, Payment Status: {payment.status}")
                 await update_person_recurring_status(self.user_id, False)

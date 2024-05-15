@@ -33,12 +33,6 @@ from bot.database.methods.get import (
 
 log = logging.getLogger(__name__)
 
-log.setLevel(logging.DEBUG)
-handler = logging.FileHandler("payment_user.log", encoding='utf-8')
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-handler.setFormatter(formatter)
-log.addHandler(handler)
-
 _ = Localization.text
 btn_text = Localization.get_reply_button
 
@@ -181,13 +175,9 @@ async def process_trial_payment(message, email, price, lang):
         _('think_email_check', lang),
         reply_markup=await balance_menu(person, lang)
     )
-    await pay_payment(
-        'KassaSmart',
-        message,
-        message.from_user,
-        price,
-        email
-    )
+    trial_payment = KassaSmart(CONFIG, message, person.tgid, price, email)
+    trial_payment.is_trial = True
+    await trial_payment.to_pay()
 
 @callback_user.callback_query(ChoosingPrise.filter())
 async def callback_payment(call: CallbackQuery, callback_data: ChoosingPrise):

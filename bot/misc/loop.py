@@ -25,15 +25,6 @@ from bot.misc.language import Localization, get_lang
 from bot.misc.util import CONFIG
 
 
-#log = logging.getLogger(__name__)
-
-import logging
-log = logging.getLogger(__name__)
-log.setLevel(logging.DEBUG)
-handler = logging.FileHandler("loop.log", encoding='utf-8')
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-handler.setFormatter(formatter)
-log.addHandler(handler)
 
 _ = Localization.text
 

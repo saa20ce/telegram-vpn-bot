@@ -41,12 +41,6 @@ from bot.misc.callbackData import ChooseServer, ChoosingLang
 log = logging.getLogger(__name__)
 
 
-log.setLevel(logging.DEBUG)
-handler = logging.FileHandler("main.user.handler.py.log", encoding='utf-8')
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-handler.setFormatter(formatter)
-log.addHandler(handler)
-
 _ = Localization.text
 btn_text = Localization.get_reply_button
 
