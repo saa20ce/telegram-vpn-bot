@@ -1,4 +1,4 @@
-#import logging
+import logging
 import time
 from datetime import datetime, timedelta, timezone
 
@@ -24,7 +24,7 @@ from bot.misc.VPN.ServerManager import ServerManager
 from bot.misc.language import Localization, get_lang
 from bot.misc.util import CONFIG
 
-
+log = logging.getLogger(__name__)
 
 _ = Localization.text
 
