@@ -20,7 +20,9 @@ from bot.database.methods.insert import add_new_person
 from bot.database.methods.update import (
     person_delete_server,
     add_user_in_server,
-    server_space_update, add_time_person, update_lang
+    server_space_update, add_time_person, update_lang,
+    update_person_recurring_status,
+    update_person_trial_status
 )
 from bot.keyboards.inline.user_inline import (
     replenishment,
@@ -224,9 +226,10 @@ async def info_subscription(m: Message, state: FSMContext) -> None:
     lang = await get_lang(m.from_user.id, state)
     person = await get_person(m.from_user.id)
     has_used_trial = person.trial_used if hasattr(person, 'trial_used') else False
+    is_recurring = person.recurring_payment_status if hasattr(person, 'recurring_payment_status') else False
     await m.answer(
         _('inform_subscription', lang),
-        reply_markup=await subscription_menu(lang, has_used_trial)
+        reply_markup=await subscription_menu(lang, has_used_trial, is_recurring)
     )
 
 
@@ -289,7 +292,23 @@ async def handle_trial_payment(m: Message, state: FSMContext) -> None:
             reply_markup=await replenishment(CONFIG, lang, True)
         )
         await update_person_trial_status(m.from_user.id, True)
-        await m.answer(_('trial_period_activated', lang))
     else:
         log.debug("Trial period has already been used")
         await m.answer(_('trial_period_already_used', lang))
+
+
+@user_router.message(F.text.in_(btn_text('stop_recurring')))
+async def handle_stop_recurring(m: Message, state: FSMContext) -> None:
+    log.debug("Handling stop recurring button press")
+    lang = await get_lang(m.from_user.id, state)
+    person = await get_person(m.from_user.id)
+    if person.recurring_payment_status:
+        log.debug("recurring is true")
+        await update_person_recurring_status(m.from_user.id, False)
+        await m.answer(
+            _('recurring_subsription_stoped', lang),
+            reply_markup=await user_menu(person, lang)
+        )
+    else:
+        log.debug("Recurring subsription cant stoped")
+        await m.answer(_('recurring_subsription_stoped', lang))
