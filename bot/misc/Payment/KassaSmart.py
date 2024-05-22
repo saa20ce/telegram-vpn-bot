@@ -1,5 +1,6 @@
 import asyncio
 import uuid
+import logging
 
 from yookassa import Configuration, Payment
 
@@ -12,6 +13,7 @@ from bot.database.methods.update import (
     update_person_recurring_status
 )
 
+log = logging.getLogger(__name__)
 
 _ = Localization.text
 
@@ -27,12 +29,14 @@ class KassaSmart(PaymentSystem):
                  user_id,
                  price,
                  email=None,
-                 recurring_payment_amount=None):
+                 recurring_payment_amount=None,
+                 is_trial=False):
         super().__init__(message, user_id, price)
         self.ACCOUNT_ID = int(config.yookassa_shop_id)
         self.SECRET_KEY = config.yookassa_secret_key
         self.EMAIL = email
         self.recurring_payment_amount = recurring_payment_amount
+        self.is_trial = is_trial
 
     async def create(self):
         self.ID = str(uuid.uuid4())
@@ -148,7 +152,7 @@ class KassaSmart(PaymentSystem):
                 log.info(f"Recurring payment successful for User ID: {self.user_id}, Amount: {self.recurring_payment_amount}")
                 break
             elif payment.status in ['pending', 'waiting_for_capture']:
-                await asyncio.sleep(30)
+                await asyncio.sleep(10)
             else:
                 log.error(f"Failed to create recurring payment for User ID: {self.user_id}, Payment Status: {payment.status}")
                 await update_person_recurring_status(self.user_id, False)
