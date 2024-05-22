@@ -42,7 +42,7 @@ async def user_menu(person, lang) -> ReplyKeyboardMarkup:
     return kb.as_markup(resize_keyboard=True)
 
 
-async def subscription_menu(lang, has_used_trial) -> ReplyKeyboardMarkup:
+async def subscription_menu(lang, has_used_trial, is_recurring) -> ReplyKeyboardMarkup:
     kb = ReplyKeyboardBuilder()
     kb.row(
         keyBtn(text=_('balanced_btn', lang)),
@@ -50,6 +50,8 @@ async def subscription_menu(lang, has_used_trial) -> ReplyKeyboardMarkup:
     )
     if not has_used_trial:
         kb.row(keyBtn(text=_('trial_period_btn', lang)))
+    if is_recurring:
+        kb.row(keyBtn(text=_('stop_recurring', lang)))
     kb.row(keyBtn(text=_('back_general_menu_btn', lang)))
     return kb.as_markup(resize_keyboard=True)
 
