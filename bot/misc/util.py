@@ -21,8 +21,6 @@ class Config:
     yookassa_shop_id: str
     yookassa_secret_key: str
     recurring_payment_amount: int
-    recurring_payment_interval_days: int
-    recurring_payment_interval_minutes: int
     trial_price: int
     trial_duration_days: int
     referral_day: int
