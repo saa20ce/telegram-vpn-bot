@@ -852,3 +852,8 @@ msgstr "Пробный период успешно активирован"
 msgid "trial_period_already_used"
 msgstr "Пробный период уже использован"
 
+msgid "stop_recurring"
+msgstr "Приостановить автопродление"
+
+msgid "recurring_subsription_stoped"
+msgstr "Автопродление приостановлено"
